@@ -9,8 +9,9 @@ wifi.auto_run() #or wifi.auto_run("your_ssid", "your_password")
 del wifi
 gc.collect()
 =========================
-手机或电脑连入热点:ESP-WIFICFG，默认密码为:3.1415926
-浏览器访问192.168.4.1进行wifi密码配置
+configuration mode:
+connect to hotspot:ESP-WIFICFG(password:3.1415926)
+access to (192.168.4.1) to configure wifi
 """
 
 import os
@@ -24,7 +25,7 @@ import ure as re
 
 class WiFi:
     LOG = True
-    
+
     def __init__(self, file="WIFICFG.json"):
         self.file = file
         self.ap = network.WLAN(network.AP_IF)
@@ -35,7 +36,7 @@ class WiFi:
         except OSError as e:
             pass
         self.sta.active(True)
-        
+
     def auto_run(self, ssid=None, passwd=None, retry=0):
         ssids = self.scan()
         time.sleep(0.5)
@@ -48,7 +49,7 @@ class WiFi:
                 if i != 0:
                     ssids = self.scan()
                     time.sleep(0.5)
-        # 尝试使用cfg配置信息进行连接
+        # try cfg_data to connect
         for i in range(retry+1):
             cfg_data = self.load_cfg()
             for each in ssids:
@@ -60,11 +61,11 @@ class WiFi:
                 time.sleep(0.5)
         self.get_cfg_from_web()
         self.log("All done! Exiting wifi configuration!")
-    
+
     def connect(self, ssid, passwd):
         self.sta.active(True)
         self.sta.disconnect()
-        self.sta.connect(ssid, passwd)
+        self.sta.connect(ssid, "" if passwd is None else passwd)
         self.log('connecting to ssid: %s' % ssid)
         for i in range(50):
             if not self.sta.isconnected():
@@ -76,26 +77,26 @@ class WiFi:
         self.sta.disconnect()
         self.log('failed to connect to ssid: %s' % ssid)
         return False
-    
+
     def load_cfg(self):
         if self.file in os.listdir():
             with open(self.file, "r") as f:
                 return json.loads(f.read())
         return {}
-    
+
     def update_cfg(self, ssid, passwd):
         data = self.load_cfg()
         data[ssid] = passwd
         with open(self.file, "w") as f:
             f.write(json.dumps(data))
-    
+
     def scan(self):
         # should set self.sta.active(True) before self.scan()
         ssids = self.sta.scan()
         _ssids = [(i[0], i[3]) for i in ssids]
         _ssids.sort(key=lambda x:x[1], reverse=True)
         return [i[0].decode('utf-8') for i in _ssids]
-        
+
     def log(self, *args, **kws):
         if self.LOG:
             for each in args[0:-1]:
@@ -105,12 +106,12 @@ class WiFi:
                 print(kws["end"])
             else:
                 print("\n")
-    
+
     def get_cfg_from_web(self):
         ssids = self.scan()
         time.sleep(0.5)
         self.ap.active(True)
-        html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/><title>WIFI配置</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family: "微软雅黑",sans-serif;}.login {position: absolute;top: 50%%;left: 50%%;margin: -150px 0 0 -150px;width:300px;height:300px;}.login h1 { color:#555555; text-shadow: 0px 10px 8px #CDC673; letter-spacing:2px;text-align:center;margin-bottom:20px; }input, select{padding:10px;width:100%%;color:white;margin-bottom:10px;background-color:#555555;border: 1px solid black;border-radius:4px;letter-spacing:2px;}form button{width:100%%;padding:10px;margin: 5px 0 0 0;background-color:#87CEFA;border:1px solid black;border-radius:4px;cursor:pointer;}</style></head><script>window.alert = function(name){var iframe = document.createElement("IFRAME");iframe.style.display="none";iframe.setAttribute("src", 'data:text/plain,');document.documentElement.appendChild(iframe);window.frames[0].window.alert(name);iframe.parentNode.removeChild(iframe);}</script>%s<body><div class="headtop"></div><div class="login"><h1>WIFI配置</h1><form action="" method="get"><select name="SSID">%s</select><input type="password" name="PASSWORD" placeholder="Password" required="required"><button type="submit">上传配置</button></form></div></body></html>"""
+        html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/><title>WIFI-CFG</title><style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family: "微软雅黑",sans-serif;}.login {position: absolute;top: 50%%;left: 50%%;margin: -150px 0 0 -150px;width:300px;height:300px;}.login h1 { color:#555555; text-shadow: 0px 10px 8px #CDC673; letter-spacing:2px;text-align:center;margin-bottom:20px; }input, select{padding:10px;width:100%%;color:white;margin-bottom:10px;background-color:#555555;border: 1px solid black;border-radius:4px;letter-spacing:2px;}form button{width:100%%;padding:10px;margin: 5px 0 0 0;background-color:#87CEFA;border:1px solid black;border-radius:4px;cursor:pointer;}</style></head><script>window.alert = function(name){var iframe = document.createElement("IFRAME");iframe.style.display="none";iframe.setAttribute("src", 'data:text/plain,');document.documentElement.appendChild(iframe);window.frames[0].window.alert(name);iframe.parentNode.removeChild(iframe);}</script>%s<body><div class="headtop"></div><div class="login"><h1>WIFI-CFG</h1><form action="" method="get"><select name="SSID">%s</select><input type="password" name="PASSWORD" placeholder="Password" required="required"><button type="submit">Submit</button></form></div></body></html>"""
         self.ap.config(essid="ESP-WIFICFG", authmode=network.AUTH_WPA_WPA2_PSK, password="3.1415926")
         skt = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         skt.bind(('0.0.0.0', 80))
@@ -136,13 +137,13 @@ class WiFi:
                     else:
                         error = True
                 if ok:
-                    client.sendall(html % ("""<script>alert("WIFI配置成功，此热点将被关闭！");</script>""", _html))
+                    client.sendall(html % ("""<script>alert("Configuration successful! This hotspot will be closed!");</script>""", _html))
                     client.close()
                     self.ap.active(False)
                     time.sleep(5)
                     break
                 else:
-                    client.sendall(html % ("""<script>alert("WIFI密码错误，请重新选择输入！");setTimeout('window.location.href="http://192.168.4.1"', 0.1);</script>""" if error else '', _html))
+                    client.sendall(html % ("""<script>alert("Wrong password! Please re-input!");setTimeout('window.location.href="http://192.168.4.1"', 0.1);</script>""" if error else '', _html))
                     if line1.split(" ")[1] == "/":
                         ssids = self.scan()
                         time.sleep(0.5)
