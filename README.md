@@ -25,6 +25,8 @@ You only need to connect to the hotspot named "_ESP-WIFICFG_" (password:_3.14159
 
 <h2 id="u1">1. Start</h2>
 
+### Quick Start
+
 Download __WIFICFG.py__ to your environment.
 
 ```PYTHON
@@ -40,6 +42,23 @@ wifi.auto_run() #or wifi.auto_run("your_ssid", "your_password")
 from WIFICFG import WiFi
 wifi = WiFi()
 wifi.connect("your_ssid", "your_password")
+```
+
+### Do something before using web
+
+```PYTHON
+from WIFICFG import WiFi
+
+def error():
+    print("Failed after trying all possible connection!")
+    print("Please connect to hotspot:ESP-WIFICFG(password:3.1415926).")
+    print("Then access to address 192.168.4.1 to upload WiFi configuration.")
+
+WiFi.LOG = False
+wifi = WiFi()
+wifi.on_connect_error = error
+wifi.auto_run()
+
 ```
 
 <h2 id="u2">2. Details</h2>
@@ -84,11 +103,16 @@ class WiFi
             get ssid and password from web
             if self.connect(ssid, password):
                 break
+
+    ----on_connect_error(self):
+        Do something before self.get_cfg_from_web().
+        Default: do noting(pass).
+        Could be customized: wifi_obj.on_connect_error = custom_error_function.
 ```
 
 <h2 id="u3">3. Download</h2>
 
-[Source code](https://github.com/Mashiro-Sorata/ESP-WIFICFG/archive/v1.0.zip)
+[Source code](https://github.com/Mashiro-Sorata/ESP-WIFICFG/archive/v1.1.zip)
 
 <h2 id="u4">4. License</h2>
 
