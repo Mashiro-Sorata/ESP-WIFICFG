@@ -59,6 +59,7 @@ class WiFi:
             if i != 0:
                 ssids = self.scan()
                 time.sleep(0.5)
+        self.on_connect_error()
         self.get_cfg_from_web()
         self.log("All done! Exiting wifi configuration!")
 
@@ -66,16 +67,16 @@ class WiFi:
         self.sta.active(True)
         self.sta.disconnect()
         self.sta.connect(ssid, "" if passwd is None else passwd)
-        self.log('connecting to ssid: %s' % ssid)
+        self.log('Try connecting to ssid: %s' % ssid)
         for i in range(50):
             if not self.sta.isconnected():
                 time.sleep(0.1)
             else:
                 self.update_cfg(ssid, passwd)
-                self.log('connected to ssid: %s' % ssid)
+                self.log('Connected to ssid: %s' % ssid)
                 return True
         self.sta.disconnect()
-        self.log('failed to connect to ssid: %s' % ssid)
+        self.log('Failed to connect to ssid: %s' % ssid)
         return False
 
     def load_cfg(self):
@@ -150,3 +151,7 @@ class WiFi:
                 client.close()
             except OSError as e:
                 self.log(e)
+
+    def on_connect_error(self):
+        pass
+
